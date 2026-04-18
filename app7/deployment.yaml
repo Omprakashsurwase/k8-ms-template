@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app7
+  namespace: multi-app
+  labels:
+    app: app7
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app7
+  template:
+    metadata:
+      labels:
+        app: app7
+    spec:
+      containers:
+        - name: app7
+          image: your-registry/app7:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ENVIRONMENT
+              value: production

@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app10
+  namespace: multi-app
+  labels:
+    app: app10
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app10
+  template:
+    metadata:
+      labels:
+        app: app10
+    spec:
+      containers:
+        - name: app10
+          image: your-registry/app10:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ENVIRONMENT
+              value: production

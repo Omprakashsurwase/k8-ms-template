@@ -1,0 +1,9 @@
+common:
+  replicaCount: 1
+  ingress:
+    enabled: true
+  apps:
+    - name: app1
+      image: your-registry/app1:staging
+    - name: app2
+      image: your-registry/app2:staging

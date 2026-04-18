@@ -1,0 +1,58 @@
+common:
+  namespace: multi-app
+  appDomain: example.com
+  replicaCount: 2
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  env:
+    - name: ENVIRONMENT
+      value: production
+  apps:
+    - name: app1
+      image: your-registry/app1:latest
+      port: 8080
+      host: app1.example.com
+    - name: app2
+      image: your-registry/app2:latest
+      port: 8080
+      host: app2.example.com
+    - name: app3
+      image: your-registry/app3:latest
+      port: 8080
+      host: app3.example.com
+    - name: app4
+      image: your-registry/app4:latest
+      port: 8080
+      host: app4.example.com
+    - name: app5
+      image: your-registry/app5:latest
+      port: 8080
+      host: app5.example.com
+    - name: app6
+      image: your-registry/app6:latest
+      port: 8080
+      host: app6.example.com
+    - name: app7
+      image: your-registry/app7:latest
+      port: 8080
+      host: app7.example.com
+    - name: app8
+      image: your-registry/app8:latest
+      port: 8080
+      host: app8.example.com
+    - name: app9
+      image: your-registry/app9:latest
+      port: 8080
+      host: app9.example.com
+    - name: app10
+      image: your-registry/app10:latest
+      port: 8080
+      host: app10.example.com

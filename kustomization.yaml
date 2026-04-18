@@ -1,0 +1,23 @@
+resources:
+  - namespace.yaml
+  - ingress.yaml
+  - app1/deployment.yaml
+  - app1/service.yaml
+  - app2/deployment.yaml
+  - app2/service.yaml
+  - app3/deployment.yaml
+  - app3/service.yaml
+  - app4/deployment.yaml
+  - app4/service.yaml
+  - app5/deployment.yaml
+  - app5/service.yaml
+  - app6/deployment.yaml
+  - app6/service.yaml
+  - app7/deployment.yaml
+  - app7/service.yaml
+  - app8/deployment.yaml
+  - app8/service.yaml
+  - app9/deployment.yaml
+  - app9/service.yaml
+  - app10/deployment.yaml
+  - app10/service.yaml

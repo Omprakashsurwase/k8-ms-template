@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app5
+  namespace: multi-app
+  labels:
+    app: app5
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app5
+  template:
+    metadata:
+      labels:
+        app: app5
+    spec:
+      containers:
+        - name: app5
+          image: your-registry/app5:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ENVIRONMENT
+              value: production
