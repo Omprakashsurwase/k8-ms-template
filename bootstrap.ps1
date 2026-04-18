@@ -35,6 +35,50 @@ function Ensure-File($path, $content) {
     }
 }
 
+function Install-Helm {
+    if (Get-Command helm -ErrorAction SilentlyContinue) {
+        $version = helm version --short 2>$null
+        Write-Info "Helm already installed: $version"
+        return
+    }
+
+    Write-Info "Helm not found. Installing Helm..."
+
+    if ($PSVersionTable.Platform -eq "Win32NT" -or -not $PSVersionTable.Platform) {
+        # Windows
+        if (Get-Command choco -ErrorAction SilentlyContinue) {
+            Write-Info "Installing Helm via Chocolatey..."
+            choco install kubernetes-helm -y | Out-Null
+        } elseif (Get-Command scoop -ErrorAction SilentlyContinue) {
+            Write-Info "Installing Helm via Scoop..."
+            scoop install helm | Out-Null
+        } else {
+            Write-Info "Downloading Helm manually..."
+            $helmUrl = "https://get.helm.sh/helm-v3.13.0-windows-amd64.zip"
+            $helmZip = "$env:TEMP\helm.zip"
+            $helmDir = "$env:TEMP\helm"
+
+            Invoke-WebRequest -Uri $helmUrl -OutFile $helmZip
+            Expand-Archive -Path $helmZip -DestinationPath $helmDir -Force
+            Copy-Item "$helmDir\windows-amd64\helm.exe" -Destination "C:\Program Files\helm.exe" -Force
+            $env:PATH = "C:\Program Files;$env:PATH"
+            [Environment]::SetEnvironmentVariable("PATH", "C:\Program Files;$env:PATH", [EnvironmentVariableTarget]::Machine)
+            Remove-Item $helmZip, $helmDir -Recurse -Force
+        }
+    } else {
+        # Linux/macOS
+        Write-Info "Running Helm installation script..."
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+    }
+
+    if (Get-Command helm -ErrorAction SilentlyContinue) {
+        $version = helm version --short 2>$null
+        Write-Info "Helm installed successfully: $version"
+    } else {
+        Write-ErrorAndExit "Helm installation failed. Please install manually from https://helm.sh/docs/intro/install/"
+    }
+}
+
 Write-Info "Bootstrapping Helm multi-app chart in '$Root'"
 
 Ensure-Directory "charts/common/templates"
@@ -323,9 +367,7 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
     }
 }
 
-if (-not (Get-Command helm -ErrorAction SilentlyContinue)) {
-    Write-ErrorAndExit "Helm is not installed or not available on PATH. Install Helm to continue."
-}
+Install-Helm
 
 Write-Info "Updating Helm dependencies..."
 helm dependency update | Write-Host
