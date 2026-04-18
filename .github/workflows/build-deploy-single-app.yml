@@ -1,0 +1,126 @@
+name: Build and Deploy Single App
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'single-app-example/**'
+  pull_request:
+    paths:
+      - 'single-app-example/**'
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Deploy to Kubernetes'
+        required: false
+        default: 'false'
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: omprakashsurwase/single-app
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./single-app-example
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+
+  test-helm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+
+      - name: Lint Helm chart
+        run: helm lint ./single-app-example/helm
+
+      - name: Template Helm chart
+        run: helm template myapp ./single-app-example/helm -f ./single-app-example/helm/values.yaml
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Configure Kubeconfig
+        if: ${{ secrets.KUBECONFIG != '' }}
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Deploy Helm chart
+        if: ${{ secrets.KUBECONFIG != '' }}
+        run: |
+          helm upgrade --install single-app ./single-app-example/helm \
+            -f ./single-app-example/helm/values.yaml \
+            --set image.tag=${{ github.sha }} \
+            --namespace single-app \
+            --create-namespace \
+            --wait
+
+      - name: Verify deployment
+        if: ${{ secrets.KUBECONFIG != '' }}
+        run: |
+          kubectl rollout status deployment/myapp -n single-app
+          kubectl get pods -n single-app
+          kubectl get svc -n single-app
+
+      - name: Skip deployment when no cluster available
+        if: ${{ secrets.KUBECONFIG == '' }}
+        run: echo "No KUBECONFIG secret; deployment skipped. Docker image built and pushed."
