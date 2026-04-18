@@ -3,7 +3,7 @@ name: Build and Deploy Single App
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       - 'single-app-example/**'
   pull_request:
