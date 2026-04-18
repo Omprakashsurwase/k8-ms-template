@@ -48,3 +48,16 @@ Update `values.yaml`:
 - `charts/common` is a reusable subchart; the root chart uses it as a dependency.
 - Add or remove apps in `common.apps` to manage how many applications Helm deploys.
 - Use `-f values-override.yaml` to change only the values you need.
+
+## GitHub Actions
+
+A GitHub Actions workflow has been added at `.github/workflows/helm-bootstrap.yml`.
+It will:
+
+- checkout the repository
+- install Helm and kubectl
+- run `bootstrap.ps1`
+- lint and package the chart
+- optionally deploy if `KUBECONFIG` is provided as a repository secret
+
+To enable deployment from GitHub Actions, add a base64-encoded `KUBECONFIG` secret named `KUBECONFIG`.
